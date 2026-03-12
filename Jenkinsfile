@@ -20,10 +20,13 @@ pipeline {
         }
 
         stage('Push Docker Image') {
-            steps {
-                sh 'docker push $IMAGE_NAME'
-            }
+    steps {
+        withCredentials([usernamePassword(credentialsId: 'dockerhub', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+            sh 'echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin'
+            sh 'docker push purushothdoc/devops-project:latest'
         }
+    }
+}
 
         stage('Deploy to Kubernetes') {
             steps {
