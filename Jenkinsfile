@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        IMAGE_NAME = "purushothgit/devops-project"
+        IMAGE_NAME = "purushothdoc/devops-project:latest"
     }
 
     stages {
