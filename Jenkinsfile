@@ -2,7 +2,8 @@ pipeline {
     agent any
 
     environment {
-        IMAGE_NAME = "purushothdoc/devops-project:latest"
+        DOCKER_IMAGE = "purushothdoc/devops-project"
+        IMAGE_TAG = "${BUILD_NUMBER}"
     }
 
     stages {
@@ -15,23 +16,28 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
-                sh 'docker build -t $IMAGE_NAME .'
+                sh "docker build -t $DOCKER_IMAGE:$IMAGE_TAG ."
             }
         }
 
         stage('Push Docker Image') {
-    steps {
-        withCredentials([usernamePassword(credentialsId: 'dockerhub', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
-            sh 'echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin'
-            sh 'docker push purushothdoc/devops-project:latest'
+            steps {
+                withCredentials([usernamePassword(credentialsId: 'dockerhub', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                    sh '''
+                    echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
+                    docker push $DOCKER_IMAGE:$IMAGE_TAG
+                    '''
+                }
+            }
         }
-    }
-}
 
         stage('Deploy to Kubernetes') {
             steps {
-                sh 'kubectl apply -f deployment.yaml'
-                sh 'kubectl apply -f service.yaml'
+                sh """
+                sed -i 's|IMAGE_TAG|$IMAGE_TAG|g' deployment.yaml
+                kubectl apply -f deployment.yaml
+                kubectl apply -f service.yaml
+                """
             }
         }
 
